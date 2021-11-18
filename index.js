@@ -24,6 +24,8 @@ async function run() {
     await client.connect();
     const database = client.db("tayeba");
     const productCollection = database.collection("products");
+    const userCollection = database.collection("users");
+    const orderCollection = database.collection("orders");
     // const orderCollection = database.collection("orders");
 
     //get products api
@@ -42,62 +44,98 @@ async function run() {
 
       res.json(product);
     });
+
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let isAdmin = false;
+      if (user?.role === "admin") {
+        isAdmin = true;
+      }
+      res.json({ admin: isAdmin });
+    });
+
+    // users post api
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.json(result);
+    });
+
+    app.put("/users", async (req, res) => {
+      const user = req.body;
+      const filter = { email: user.email };
+      const options = { upsert: true };
+      const updateDoc = { $set: user };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      res.json(result);
+    });
+
+    // admin api
+    app.put("/users/admin", async (req, res) => {
+      const user = req.body;
+      const filter = { email: user.email };
+      const updateDoc = { $set: { role: "admin" } };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.json(result);
+    });
     // // get orders api
 
-    // app.get("/orders", async (req, res) => {
-    //   const cursor = orderCollection.find({});
-    //   const orders = await cursor.toArray();
-    //   res.send(orders);
-    // });
+    app.get("/orders", async (req, res) => {
+      const cursor = orderCollection.find({});
+      const orders = await cursor.toArray();
+      res.send(orders);
+    });
 
-    // // get single order api
-    // app.get("/orders/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: ObjectId(id) };
-    //   const order = await orderCollection.findOne(query);
-    //   res.json(order);
-    // });
-    // // post new service api
+    // get single order api
+    app.get("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const order = await orderCollection.findOne(query);
+      res.json(order);
+    });
+    // post new service api
     // app.post("/services", async (req, res) => {
     //   const order = req.body;
     //   const result = await serviceCollection.insertOne(order);
     //   res.json(result);
     // });
-    // // post api(order)
-    // app.post("/orders", async (req, res) => {
-    //   const order = req.body;
-    //   const result = await orderCollection.insertOne(order);
-    //   res.json(result);
-    // });
 
+    // post api(order)
+    app.post("/orders", async (req, res) => {
+      const order = req.body;
+      const result = await orderCollection.insertOne(order);
+      res.json(result);
+    });
     // // update/put order status api
 
-    // app.put("/orders/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const updateOrder = req.body;
-    //   const filter = { _id: ObjectId(id) };
-    //   const options = { upsert: true };
-    //   const updateDoc = {
-    //     $set: {
-    //       status: updateOrder.status,
-    //     },
-    //   };
-    //   const result = await orderCollection.updateOne(
-    //     filter,
-    //     updateDoc,
-    //     options
-    //   );
-    //   res.json(result);
-    // });
+    app.put("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateOrder = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          status: updateOrder.status,
+        },
+      };
+      const result = await orderCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.json(result);
+    });
 
     // // delete api(orders)
 
-    // app.delete("/orders/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: ObjectId(id) };
-    //   const result = await orderCollection.deleteOne(query);
-    //   res.json(result);
-    // });
+    app.delete("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await orderCollection.deleteOne(query);
+      res.json(result);
+    });
   } finally {
     //    await client.close()
   }
