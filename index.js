@@ -26,6 +26,7 @@ async function run() {
     const productCollection = database.collection("products");
     const userCollection = database.collection("users");
     const orderCollection = database.collection("orders");
+    const reviewCollection = database.collection("reviews");
     // const orderCollection = database.collection("orders");
 
     //get products api
@@ -44,7 +45,13 @@ async function run() {
 
       res.json(product);
     });
-
+    // // delete api(products)
+    app.delete("/products/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await productCollection.deleteOne(query);
+      res.json(result);
+    });
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -95,12 +102,26 @@ async function run() {
       const order = await orderCollection.findOne(query);
       res.json(order);
     });
-    // post new service api
-    // app.post("/services", async (req, res) => {
-    //   const order = req.body;
-    //   const result = await serviceCollection.insertOne(order);
-    //   res.json(result);
-    // });
+
+    //post reviews
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.json(result);
+    });
+    //get reviews
+    app.get("/reviews", async (req, res) => {
+      const cursor = reviewCollection.find({});
+      const reviews = await cursor.toArray();
+      res.send(reviews);
+    });
+    //post product api
+
+    app.post("/products", async (req, res) => {
+      const product = req.body;
+      const result = await productCollection.insertOne(product);
+      res.json(result);
+    });
 
     // post api(order)
     app.post("/orders", async (req, res) => {
